@@ -6,35 +6,79 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(true)
+  const [oauthLoading, setOAuthLoading] = useState(false)
+  const [loadingUserId, setLoadingUserId] = useState(null)  // Track which userId is currently being loaded
 
   useEffect(() => {
-    // Restore existing session on page load
+    // Just check if session exists, don't load profile yet
+    // The onAuthStateChange listener will handle profile loading
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) loadProfile(session.user.id)
-      else setLoading(false)
+      // Profile will be loaded by onAuthStateChange listener
+      if (!session) {
+        setLoading(false)
+      }
+    }).catch(err => {
+      console.error('🔴 [AuthContext] getSession() error:', err)
+      setLoading(false)
     })
 
-    // Listen for login/logout events
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) loadProfile(session.user.id)
-      else { setUser(null); setLoading(false) }
+    // Listen for login/logout events - THIS is where we load the profile
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      // Only load profile on INITIAL_SESSION - this is when RLS context is ready
+      // Skip SIGNED_IN because it fires too early before session context is initialized
+      if (_event === 'INITIAL_SESSION' && session) {
+        await loadProfile(session.user.id)
+        setOAuthLoading(false)
+      }
+      else if (_event === 'SIGNED_IN' && session) {
+        // SIGNED_IN event - skipping profile load (will come from INITIAL_SESSION)
+      }
+      else if (!session) { 
+        setUser(null)
+        setLoading(false)
+        setOAuthLoading(false)
+      }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
   const loadProfile = async (userId) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, email, name, role, assigned_hotel_id')
-      .eq('id', userId)
-      .single()
-
-    if (!error && data) {
-      setUser(data)
+    // Skip if already loading this exact userId to prevent concurrent duplicate requests
+    if (loadingUserId === userId) {
+      return
     }
-    setLoading(false)
-    return data
+    
+    setLoadingUserId(userId)
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, name, role, assigned_hotel_id')
+        .eq('id', userId)
+        .single()
+
+      if (error) {
+        console.error('🔴 [AuthContext] Profile load error:', error.message, error.code)
+        setLoading(false)
+        setLoadingUserId(null)
+        return null
+      }
+      
+      if (data) {
+        setUser(data)
+      }
+      
+      setLoading(false)
+      setLoadingUserId(null)
+      return data
+      
+    } catch (err) {
+      console.error('🔴 [AuthContext] Profile load failed:', err.message)
+      setLoading(false)
+      setLoadingUserId(null)
+      return null
+    }
   }
 
   const login = async (email, password) => {
@@ -45,11 +89,32 @@ export function AuthProvider({ children }) {
   }
 
   const loginWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin }
-    })
-    if (error) throw new Error(error.message)
+    setOAuthLoading(true)
+    try {
+      const redirectUrl = `${window.location.origin}/auth/callback`
+      
+      const response = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { 
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false
+        }
+      })
+      
+      const { error } = response
+      
+      if (error) {
+        console.error('🔴 [AuthContext] OAuth error from Supabase:', error)
+        setOAuthLoading(false)
+        throw new Error(error.message)
+      }
+      
+      // Don't set oauthLoading to false here - let the redirect and onAuthStateChange handle it
+    } catch (err) {
+      console.error('🔴 [AuthContext] OAuth exception:', err.message)
+      setOAuthLoading(false)
+      throw err
+    }
   }
 
   const logout = async () => {
@@ -58,7 +123,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading, oauthLoading, login, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   )

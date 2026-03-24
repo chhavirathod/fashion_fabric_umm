@@ -11,6 +11,7 @@ import StaffLayout from './components/staff/StaffLayout'
 
 // Pages
 import LoginPage from './pages/LoginPage'
+import OAuthCallback from './pages/OAuthCallback'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import HotelsPage from './pages/admin/HotelsPage'
 import EmployeesPage from './pages/admin/EmployeesPage'
@@ -58,10 +59,11 @@ export default function App() {
       <AppProvider>
         <ToastProvider>
           <Routes>
-            <Route path="/login"    element={<LoginPage />} />
-            <Route path="/admin/*"  element={<AdminApp />} />
-            <Route path="/staff/*"  element={<StaffApp />} />
-            <Route path="*"         element={<Navigate to="/login" replace />} />
+            <Route path="/login"           element={<LoginPage />} />
+            <Route path="/auth/callback"   element={<OAuthCallback />} />
+            <Route path="/admin/*"         element={<AdminApp />} />
+            <Route path="/staff/*"         element={<StaffApp />} />
+            <Route path="*"                element={<Navigate to="/login" replace />} />
           </Routes>
         </ToastProvider>
       </AppProvider>
