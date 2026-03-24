@@ -5,21 +5,6 @@ import { Building2, Users, CheckCircle2, Clock, TrendingUp, ArrowRight } from 'l
 import { VERTICALS } from '../../data/seed'
 import { StatusBadge } from '../../utils/helpers'
 
-function StatCard({ label, value, sub, icon: Icon, color }) {
-  return (
-    <div className="card p-5 flex items-start gap-4">
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
-        <Icon size={20} />
-      </div>
-      <div>
-        <p className="text-2xl font-display font-bold text-surface-900">{value}</p>
-        <p className="text-sm font-medium text-surface-600">{label}</p>
-        {sub && <p className="text-xs text-surface-400 mt-0.5">{sub}</p>}
-      </div>
-    </div>
-  )
-}
-
 function ProgressRing({ pct, size = 52, stroke = 5 }) {
   const r = (size - stroke) / 2
   const circ = 2 * Math.PI * r
@@ -45,15 +30,6 @@ export default function AdminDashboard() {
   const { hotels, departments, employees, measurements } = state
   const navigate = useNavigate()
 
-  const stats = useMemo(() => {
-    const active = hotels.filter(h => h.isActive)
-    const totalEmp = employees.length
-    const measured = employees.filter(e => e.status !== 'pending').length
-    const completed = employees.filter(e => e.status === 'completed').length
-    const pending = employees.filter(e => e.status === 'pending').length
-    const pct = totalEmp ? Math.round((measured / totalEmp) * 100) : 0
-    return { activeHotels: active.length, totalEmp, measured, completed, pending, pct }
-  }, [hotels, employees])
 
   const hotelRows = useMemo(() => {
     return hotels.filter(h => h.isActive).map(h => {
@@ -87,23 +63,30 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard label="Active Clients" value={stats.activeHotels} sub={`of ${hotels.length} total`}
-          icon={Building2} color="bg-blue-100 text-blue-600" />
-        <StatCard label="Total Employees" value={stats.totalEmp} sub="across all clients"
-          icon={Users} color="bg-purple-100 text-purple-600" />
-        <StatCard label="Measured" value={stats.measured} sub={`${stats.pct}% completion`}
-          icon={TrendingUp} color="bg-brand-100 text-brand-700" />
-        <StatCard label="Pending" value={stats.pending} sub="awaiting measurement"
-          icon={Clock} color="bg-amber-100 text-amber-600" />
+      {/* Status breakdown */}
+      <div className="card p-5">
+        <h2 className="font-display font-semibold text-surface-800 mb-4">Status Breakdown</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Pending',         count: employees.filter(e => e.status === 'pending').length,    cls: 'bg-amber-50 border-amber-200 text-amber-800' },
+            { label: 'Measured',        count: employees.filter(e => e.status === 'measured').length,   cls: 'bg-blue-50 border-blue-200 text-blue-800' },
+            { label: 'Total Employees', count: employees.length,                                        cls: 'bg-purple-50 border-purple-200 text-purple-800' },
+            { label: 'Completed',       count: employees.filter(e => e.status === 'completed').length,  cls: 'bg-brand-50 border-brand-200 text-brand-800' },
+          ].map(s => (
+            <div key={s.label} className={`rounded-xl border p-4 ${s.cls}`}>
+              <p className="text-3xl font-display font-bold">{s.count}</p>
+              <p className="text-sm font-medium mt-1">{s.label}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Hotel progress table + recent activity */}
+      {/* Clients & Hotels Overview + Recent activity */}
       <div className="grid lg:grid-cols-5 gap-6">
-        {/* Hotel progress */}
+        {/* Clients & Hotels */}
         <div className="lg:col-span-3 card overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-surface-100">
-            <h2 className="font-display font-semibold text-surface-800">Client Progress</h2>
+            <h2 className="font-display font-semibold text-surface-800">Clients & Hotels Overview</h2>
             <button onClick={() => navigate('/admin/hotels')} className="text-xs text-brand-600 font-semibold hover:underline flex items-center gap-1">
               Manage <ArrowRight size={12} />
             </button>
@@ -185,23 +168,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Status breakdown */}
-      <div className="card p-5">
-        <h2 className="font-display font-semibold text-surface-800 mb-4">Status Breakdown</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: 'Pending',       count: employees.filter(e => e.status === 'pending').length,    cls: 'bg-amber-50 border-amber-200 text-amber-800' },
-            { label: 'Measured',      count: employees.filter(e => e.status === 'measured').length,   cls: 'bg-blue-50 border-blue-200 text-blue-800' },
-            { label: 'In Production', count: employees.filter(e => e.status === 'production').length, cls: 'bg-purple-50 border-purple-200 text-purple-800' },
-            { label: 'Completed',     count: employees.filter(e => e.status === 'completed').length,  cls: 'bg-brand-50 border-brand-200 text-brand-800' },
-          ].map(s => (
-            <div key={s.label} className={`rounded-xl border p-4 ${s.cls}`}>
-              <p className="text-3xl font-display font-bold">{s.count}</p>
-              <p className="text-sm font-medium mt-1">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }

@@ -30,14 +30,18 @@ export function AuthProvider({ children }) {
       .eq('id', userId)
       .single()
 
-    if (!error && data) setUser(data)
+    if (!error && data) {
+      setUser(data)
+    }
     setLoading(false)
+    return data
   }
 
   const login = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw new Error(error.message)
-    return data
+    const profile = await loadProfile(data.user.id)
+    return profile
   }
 
   const loginWithGoogle = async () => {

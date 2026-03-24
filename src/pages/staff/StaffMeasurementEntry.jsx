@@ -221,18 +221,22 @@ export default function StaffMeasurementEntry() {
   }
 }
 
-  // ── Add employee ─────────────────────────────────────────────────────────────
-  const handleAddEmployee = (form) => {
+  const handleAddEmployee = async (form) => {
     const hotelEmps = employees.filter(e => e.hotelId === selHotel.id).length
     const empCode = `FF-${selHotel.id.toUpperCase()}-${String(hotelEmps + 1).padStart(3, '0')}`
-    const newEmp = {
+    const newEmpPayload = {
       id: genId('e'), ...form,
       hotelId: selHotel.id, deptId: selDept.id, empCode, status: 'pending',
     }
-    dispatch({ type: 'ADD_EMPLOYEE', payload: newEmp })
-    setSelEmp(newEmp)
-    setStep(2)
-    toast('Employee added!', 'success')
+    
+    try {
+      const savedEmp = await dispatch({ type: 'ADD_EMPLOYEE', payload: newEmpPayload })
+      setSelEmp(savedEmp)
+      setStep(2)
+      toast('Employee added!', 'success')
+    } catch (err) {
+      toast('Failed to add employee: ' + err.message, 'error')
+    }
   }
 
   // ── Step navigation ──────────────────────────────────────────────────────────

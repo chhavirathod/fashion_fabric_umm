@@ -81,7 +81,7 @@ export function AppProvider({ children }) {
     const { data, error } = await supabase.from('employees').insert([snakeEmp(form)]).select().single()
     if (error) throw error
     setEmployees(prev => [...prev, camelEmp(data)])
-    return data
+    return camelEmp(data)
   }
 
   const updateEmployee = async (emp) => {

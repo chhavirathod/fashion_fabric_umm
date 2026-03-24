@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [role, setRole] = useState('admin') // quick-select for demo
+  const [role, setRole] = useState('admin')
 
   const QUICK = {
     admin: { email: 'admin@fashionfabric.in', password: 'admin123' },
