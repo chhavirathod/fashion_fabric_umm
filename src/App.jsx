@@ -13,9 +13,9 @@ import StaffLayout from './components/staff/StaffLayout'
 import LoginPage from './pages/LoginPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import HotelsPage from './pages/admin/HotelsPage'
-import EmployeesPage from './pages/admin/EmployeesPage'
-import MeasurementsPage from './pages/admin/MeasurementsPage'
-import OrderStatusPage from './pages/admin/OrderStatusPage'
+import EmployeesPage from './pages/staff/EmployeesPage'
+import MeasurementsPage from './pages/staff/MeasurementsPage'
+import OrderStatusPage from './pages/staff/OrderStatusPage'
 import ExportPage from './pages/admin/ExportPage'
 import StaffMeasurementEntry from './pages/staff/StaffMeasurementEntry'
 import StaffMyEntries from './pages/staff/StaffMyEntries'
@@ -27,9 +27,6 @@ function AdminApp() {
         <Routes>
           <Route path="/"            element={<AdminDashboard />} />
           <Route path="/hotels"      element={<HotelsPage />} />
-          <Route path="/employees"   element={<EmployeesPage />} />
-          <Route path="/measurements"element={<MeasurementsPage />} />
-          <Route path="/orders"      element={<OrderStatusPage />} />
           <Route path="/export"      element={<ExportPage />} />
           <Route path="*"            element={<Navigate to="/admin" replace />} />
         </Routes>
@@ -45,6 +42,9 @@ function StaffApp() {
         <Routes>
           <Route path="/"            element={<StaffMeasurementEntry />} />
           <Route path="/my-entries"  element={<StaffMyEntries />} />
+          <Route path="/employees"   element={<EmployeesPage />} />
+          <Route path="/measurements"element={<MeasurementsPage />} />
+          <Route path="/orders"      element={<OrderStatusPage />} />
           <Route path="*"            element={<Navigate to="/staff" replace />} />
         </Routes>
       </StaffLayout>
