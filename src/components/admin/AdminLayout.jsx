@@ -10,10 +10,7 @@ import clsx from 'clsx'
 const NAV = [
   { to: '/admin',             label: 'Dashboard',    icon: LayoutDashboard, end: true },
   { to: '/admin/hotels',      label: 'Hotels',       icon: Building2 },
-  { to: '/admin/employees',   label: 'Employees',    icon: Users },
-  { to: '/admin/measurements',label: 'Measurements', icon: Ruler },
-  { to: '/admin/orders',      label: 'Order Status', icon: PackageCheck },
-  { to: '/admin/export',      label: 'Export Data',  icon: Download },
+  { to: '/admin/export',      label: 'Import / Export',  icon: Download },
 ]
 
 export default function AdminLayout({ children }) {

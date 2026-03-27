@@ -1,12 +1,15 @@
 import React, { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { Ruler, ClipboardList, LogOut, Menu, ChevronRight } from 'lucide-react'
+import { Ruler, ClipboardList, LogOut, Menu, ChevronRight, Users, PackageCheck } from 'lucide-react'
 import clsx from 'clsx'
 
 const NAV = [
   { to: '/staff',             label: 'Take Measurements', icon: Ruler,         end: true },
   { to: '/staff/my-entries',  label: 'My Entries',         icon: ClipboardList },
+  { to: '/staff/employees',   label: 'Employees',         icon: Users },
+  { to: '/staff/measurements',label: 'Measurements',      icon: Ruler },
+  { to: '/staff/orders',      label: 'Order Status',      icon: PackageCheck },
 ]
 
 export default function StaffLayout({ children }) {
