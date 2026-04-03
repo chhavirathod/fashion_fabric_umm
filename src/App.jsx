@@ -13,6 +13,7 @@ import StaffLayout from './components/staff/StaffLayout'
 import LoginPage from './pages/LoginPage'
 import OAuthCallback from './pages/OAuthCallback'
 import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminClientDetail from './pages/admin/AdminClientDetail'
 import HotelsPage from './pages/admin/HotelsPage'
 import EmployeesPage from './pages/staff/EmployeesPage'
 import MeasurementsPage from './pages/staff/MeasurementsPage'
@@ -27,6 +28,7 @@ function AdminApp() {
       <AdminLayout>
         <Routes>
           <Route path="/"            element={<AdminDashboard />} />
+          <Route path="/clients/:hotelId" element={<AdminClientDetail />} />
           <Route path="/hotels"      element={<HotelsPage />} />
           <Route path="/export"      element={<ExportPage />} />
           <Route path="*"            element={<Navigate to="/admin" replace />} />

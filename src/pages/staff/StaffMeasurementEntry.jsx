@@ -6,7 +6,7 @@ import Modal from '../../components/shared/Modal'
 import UnitToggle from '../../components/shared/UnitToggle'
 import EmptyState from '../../components/shared/EmptyState'
 import { genId, inToCm, cmToIn, StatusBadge } from '../../utils/helpers'
-import { UNIFORM_TYPES, MEASUREMENT_FIELDS, STATUS_OPTIONS, GENDER_OPTIONS } from '../../data/seed'
+import { UNIFORM_TYPES, MEASUREMENT_FIELDS, STATUS_OPTIONS, GENDER_OPTIONS, VERTICALS, DEPT_PRESETS } from '../../data/seed'
 import {
   ChevronRight, User, Plus, Ruler, Check, Building2,
   Layers, Search, ChevronDown, Edit2, Save
@@ -30,6 +30,96 @@ function Steps({ current }) {
           {i < steps.length - 1 && <ChevronRight size={12} className="text-surface-300 shrink-0" />}
         </React.Fragment>
       ))}
+    </div>
+  )
+}
+
+// ─── Add Hotel Form ───────────────────────────────────────────────────────────
+function AddHotelForm({ onAdd, onClose }) {
+  const [form, setForm] = useState({
+    name: '',
+    address: '',
+    contact: '',
+    vertical: 'hospitality',
+  })
+  const s = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }))
+
+  const handleSave = () => {
+    if (!form.name.trim()) return
+    onAdd(form)
+    onClose()
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="label">Client / Hotel Name *</label>
+        <input className="input" value={form.name} onChange={s('name')} placeholder="e.g. The Oberoi Grand" autoFocus />
+      </div>
+      <div>
+        <label className="label">Industry Vertical *</label>
+        <select className="input" value={form.vertical} onChange={s('vertical')}>
+          {VERTICALS.map(v => (
+            <option key={v.id} value={v.id}>{v.icon} {v.label}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="label">Address</label>
+        <input className="input" value={form.address} onChange={s('address')} placeholder="Street, City" />
+      </div>
+      <div>
+        <label className="label">Contact</label>
+        <input className="input" value={form.contact} onChange={s('contact')} placeholder="+91 …" />
+      </div>
+      <div className="flex gap-3 pt-2">
+        <button className="btn-secondary flex-1" onClick={onClose}>Cancel</button>
+        <button className="btn-primary flex-1" onClick={handleSave} disabled={!form.name.trim()}>
+          Create Client
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Add Department Form ───────────────────────────────────────────────────────
+function AddDepartmentForm({ hotelVertical, onAdd, onClose }) {
+  const presets = DEPT_PRESETS[hotelVertical] || []
+  const [name, setName] = useState('')
+
+  const handleSave = () => {
+    if (!name.trim()) return
+    onAdd(name.trim())
+    onClose()
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="label">Department Name *</label>
+        <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Front Desk" autoFocus />
+      </div>
+      {presets.length > 0 && (
+        <div>
+          <label className="label">Quick Suggestions from Vertical</label>
+          <div className="flex flex-wrap gap-2">
+            {presets.map(p => (
+              <button key={p} type="button"
+                onClick={() => setName(p)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${name === p ? 'bg-brand-700 text-white border-brand-700' : 'bg-white text-surface-600 border-surface-200 hover:border-brand-400'}`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="flex gap-3 pt-2">
+        <button className="btn-secondary flex-1" onClick={onClose}>Cancel</button>
+        <button className="btn-primary flex-1" onClick={handleSave} disabled={!name.trim()}>
+          Create Department
+        </button>
+      </div>
     </div>
   )
 }
@@ -125,13 +215,16 @@ export default function StaffMeasurementEntry() {
   const [values, setValues]     = useState({})
   const [addEmpModal, setAddEmpModal] = useState(false)
 
+  // ── Modal states ─────────────────────────────────────────────────────────────
+  const [addHotelModal, setAddHotelModal] = useState(false)
+  const [addDeptModal, setAddDeptModal] = useState(false)
+
   // ── Filters ──────────────────────────────────────────────────────────────────
   const [empSearch, setEmpSearch] = useState('')
 
   const availableHotels = useMemo(() => {
-    if (user?.assignedHotelId) return hotels.filter(h => h.id === user.assignedHotelId && h.isActive)
     return hotels.filter(h => h.isActive)
-  }, [hotels, user])
+  }, [hotels])
 
   const availableDepts = useMemo(() => {
     if (!selHotel) return []
@@ -239,6 +332,43 @@ export default function StaffMeasurementEntry() {
     }
   }
 
+  const handleAddHotel = async (form) => {
+    try {
+      const newHotel = await dispatch({
+        type: 'ADD_HOTEL',
+        payload: {
+          id: genId('h'),
+          ...form,
+          isActive: true,
+        }
+      })
+      setSelHotel(newHotel)
+      setStep(1)
+      toast('Hotel created!', 'success')
+    } catch (err) {
+      toast('Failed to create hotel: ' + err.message, 'error')
+    }
+  }
+
+  const handleAddDepartment = async (name) => {
+    try {
+      const newDept = await dispatch({
+        type: 'ADD_DEPARTMENT',
+        payload: {
+          id: genId('d'),
+          hotelId: selHotel.id,
+          name,
+          isActive: true,
+        }
+      })
+      setSelDept(newDept)
+      setStep(2)
+      toast('Department created!', 'success')
+    } catch (err) {
+      toast('Failed to create department: ' + err.message, 'error')
+    }
+  }
+
   // ── Step navigation ──────────────────────────────────────────────────────────
   const goBack = () => {
     if (step === 3) { setSelType(null); setValues({}); setStep(2) }
@@ -289,39 +419,59 @@ export default function StaffMeasurementEntry() {
       {/* ── STEP 0: Select Hotel ─────────────────────────────────────────────── */}
       {step === 0 && (
         <div className="card overflow-hidden">
-          <div className="px-5 py-4 border-b border-surface-100">
+          <div className="px-5 py-4 border-b border-surface-100 flex items-center justify-between">
             <h2 className="font-display font-semibold text-surface-800 flex items-center gap-2">
               <Building2 size={17} className="text-brand-600" /> Select Client
             </h2>
+            <button onClick={() => setAddHotelModal(true)} className="btn-primary py-1.5 px-3 text-xs">
+              <Plus size={13} /> Create New
+            </button>
           </div>
-          <div className="p-2">
-            {availableHotels.map(h => (
-              <button
-                key={h.id}
-                onClick={() => { setSelHotel(h); setStep(1) }}
-                className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl hover:bg-surface-50 transition-colors text-left group"
-              >
-                <div>
-                  <p className="font-semibold text-surface-800">{h.name}</p>
-                  <p className="text-xs text-surface-400">{h.address}</p>
-                </div>
-                <ChevronRight size={16} className="text-surface-300 group-hover:text-surface-600 shrink-0" />
+          {availableHotels.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-sm text-surface-400 mb-3">No clients yet. Create one to get started.</p>
+              <button onClick={() => setAddHotelModal(true)} className="btn-primary text-xs">
+                <Plus size={13} /> Create Client
               </button>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="p-2">
+              {availableHotels.map(h => (
+                <button
+                  key={h.id}
+                  onClick={() => { setSelHotel(h); setStep(1) }}
+                  className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl hover:bg-surface-50 transition-colors text-left group"
+                >
+                  <div>
+                    <p className="font-semibold text-surface-800">{h.name}</p>
+                    <p className="text-xs text-surface-400">{h.address}</p>
+                  </div>
+                  <ChevronRight size={16} className="text-surface-300 group-hover:text-surface-600 shrink-0" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* ── STEP 1: Select Department ────────────────────────────────────────── */}
       {step === 1 && (
         <div className="card overflow-hidden">
-          <div className="px-5 py-4 border-b border-surface-100">
+          <div className="px-5 py-4 border-b border-surface-100 flex items-center justify-between">
             <h2 className="font-display font-semibold text-surface-800 flex items-center gap-2">
               <Layers size={17} className="text-brand-600" /> Select Department
             </h2>
+            <button onClick={() => setAddDeptModal(true)} className="btn-primary py-1.5 px-3 text-xs">
+              <Plus size={13} /> Create New
+            </button>
           </div>
           {availableDepts.length === 0 ? (
-            <div className="p-8 text-center text-sm text-surface-400">No departments found for this client.</div>
+            <div className="p-8 text-center">
+              <p className="text-sm text-surface-400 mb-3">No departments yet. Create one for this client.</p>
+              <button onClick={() => setAddDeptModal(true)} className="btn-primary text-xs">
+                <Plus size={13} /> Create Department
+              </button>
+            </div>
           ) : (
             <div className="p-2">
               {availableDepts.map(d => {
@@ -491,6 +641,20 @@ export default function StaffMeasurementEntry() {
           employees={employees}
           onAdd={handleAddEmployee}
           onClose={() => setAddEmpModal(false)}
+        />
+      </Modal>
+
+      {/* Add hotel modal */}
+      <Modal isOpen={addHotelModal} onClose={() => setAddHotelModal(false)} title="Create New Client" size="sm">
+        <AddHotelForm onAdd={handleAddHotel} onClose={() => setAddHotelModal(false)} />
+      </Modal>
+
+      {/* Add department modal */}
+      <Modal isOpen={addDeptModal} onClose={() => setAddDeptModal(false)} title={`Create Department — ${selHotel?.name}`} size="sm">
+        <AddDepartmentForm
+          hotelVertical={selHotel?.vertical}
+          onAdd={handleAddDepartment}
+          onClose={() => setAddDeptModal(false)}
         />
       </Modal>
     </div>

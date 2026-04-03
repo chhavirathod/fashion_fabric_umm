@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { useApp } from '../../context/AppContext'
+import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../components/shared/Toast'
 import ConfirmDialog from '../../components/shared/ConfirmDialog'
 import SearchInput from '../../components/shared/SearchInput'
@@ -79,6 +80,7 @@ function MeasurementCard({ measurement, onDelete }) {
 
 export default function MeasurementsPage() {
   const { state, dispatch } = useApp()
+  const { user } = useAuth()
   const { hotels, departments, employees, measurements } = state
   const toast = useToast()
 
@@ -90,17 +92,21 @@ export default function MeasurementsPage() {
 
   const filteredDepts = filterHotel === 'all' ? departments : departments.filter(d => d.hotelId === filterHotel)
 
+  // Only show measurements recorded by the current user
   const filtered = useMemo(() => {
-    return measurements.filter(m => {
-      const emp = employees.find(e => e.id === m.employeeId)
-      if (!emp) return false
-      const matchSearch = emp.name.toLowerCase().includes(search.toLowerCase()) || emp.empCode.toLowerCase().includes(search.toLowerCase())
-      const matchHotel  = filterHotel === 'all' || emp.hotelId === filterHotel
-      const matchDept   = filterDept  === 'all' || emp.deptId  === filterDept
-      const matchType   = filterType  === 'all' || m.uniformType === filterType
-      return matchSearch && matchHotel && matchDept && matchType
-    }).sort((a, b) => new Date(b.recordedAt) - new Date(a.recordedAt))
-  }, [measurements, employees, search, filterHotel, filterDept, filterType])
+    return measurements
+      .filter(m => m.recordedBy === user?.id)
+      .filter(m => {
+        const emp = employees.find(e => e.id === m.employeeId)
+        if (!emp) return false
+        const matchSearch = emp.name.toLowerCase().includes(search.toLowerCase()) || emp.empCode.toLowerCase().includes(search.toLowerCase())
+        const matchHotel  = filterHotel === 'all' || emp.hotelId === filterHotel
+        const matchDept   = filterDept  === 'all' || emp.deptId  === filterDept
+        const matchType   = filterType  === 'all' || m.uniformType === filterType
+        return matchSearch && matchHotel && matchDept && matchType
+      })
+      .sort((a, b) => new Date(b.recordedAt) - new Date(a.recordedAt))
+  }, [measurements, employees, user, search, filterHotel, filterDept, filterType])
 
   const handleDelete = (id) => {
     dispatch({ type: 'DELETE_MEASUREMENT', payload: id })
@@ -111,7 +117,7 @@ export default function MeasurementsPage() {
     <div className="p-6 lg:p-8 space-y-6 fade-in">
       <div>
         <h1 className="font-display font-bold text-2xl text-surface-900">Measurements</h1>
-        <p className="text-sm text-surface-500 mt-1">{measurements.length} measurement records across all staff.</p>
+        <p className="text-sm text-surface-500 mt-1">{filtered.length} measurements recorded by you.</p>
       </div>
 
       <div className="flex flex-wrap gap-3">

@@ -2,14 +2,12 @@ import React, { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import {
-  LayoutDashboard, Building2, Users, Ruler, PackageCheck,
-  Download, LogOut, Menu, X, ChevronRight, Settings
+  Building2, Ruler, Download, LogOut, Menu, X, ChevronRight
 } from 'lucide-react'
 import clsx from 'clsx'
 
 const NAV = [
-  { to: '/admin',             label: 'Dashboard',    icon: LayoutDashboard, end: true },
-  { to: '/admin/hotels',      label: 'Hotels',       icon: Building2 },
+  { to: '/admin',             label: 'Clients',      icon: Building2, end: true },
   { to: '/admin/export',      label: 'Import / Export',  icon: Download },
 ]
 
