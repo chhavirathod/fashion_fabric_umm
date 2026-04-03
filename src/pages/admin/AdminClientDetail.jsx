@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
-import { ChevronLeft, Layers, Download, FileSpreadsheet } from 'lucide-react'
-import { exportToCSV, exportToExcel, buildExportRows } from '../../utils/helpers'
+import { ChevronLeft, Layers, Download } from 'lucide-react'
+import { generateExportData } from '../../utils/excel'
 import UnitToggle from '../../components/shared/UnitToggle'
 import EmptyState from '../../components/shared/EmptyState'
 import { UNIFORM_TYPES, VERTICALS } from '../../data/seed'
@@ -40,19 +40,19 @@ export default function AdminClientDetail() {
 
   const handleExport = (format) => {
     if (!selectedDept) return
-    const rows = buildExportRows({
+    if (format !== 'xlsx') return
+
+    generateExportData({
       hotels,
       departments,
       employees,
-      measurements: deptMeasurements,
+      measurements,
+      filters: {
+        hotelId: hotelId,
+        deptId: selectedDept.id,
+      },
+      filename: `${hotel.name}_${selectedDept.name}_${new Date().toISOString().slice(0, 10)}.xlsx`,
     })
-    
-    const fileName = `${hotel.name}_${selectedDept.name}_${new Date().toISOString().slice(0, 10)}`
-    if (format === 'csv') {
-      exportToCSV(rows, fileName + '.csv')
-    } else {
-      exportToExcel(rows, fileName + '.xlsx', selectedDept.name)
-    }
   }
 
   if (!hotel) {
@@ -137,12 +137,6 @@ export default function AdminClientDetail() {
                   <p className="text-xs text-surface-600 mt-0.5">{deptMeasurements.length} entries from {selectedDept.name}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleExport('csv')}
-                    className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-2"
-                  >
-                    <FileSpreadsheet size={14} /> CSV
-                  </button>
                   <button
                     onClick={() => handleExport('xlsx')}
                     className="btn-primary text-xs py-1.5 px-3 flex items-center gap-2"
