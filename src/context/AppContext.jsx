@@ -1,17 +1,38 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from './AuthContext'
 
 const AppContext = createContext(null)
 
 export function AppProvider({ children }) {
+  const { user, loading } = useAuth()
   const [hotels,       setHotels]       = useState([])
   const [departments,  setDepartments]  = useState([])
   const [employees,    setEmployees]    = useState([])
   const [measurements, setMeasurements] = useState([])
   const [loadingData,  setLoadingData]  = useState(true)
+  const lastFetchedUserId = useRef(null)
 
-  // ── Fetch all data on mount ──────────────────────────────────────────────
-  useEffect(() => { fetchAll() }, [])
+  // ── Fetch data only after auth is ready and a user exists ───────────────
+  useEffect(() => {
+    if (loading) return
+
+    if (!user) {
+      setHotels([])
+      setDepartments([])
+      setEmployees([])
+      setMeasurements([])
+      setLoadingData(false)
+      lastFetchedUserId.current = null
+      return
+    }
+
+    // Avoid duplicate fetches for the same authenticated user.
+    if (lastFetchedUserId.current === user.id) return
+
+    lastFetchedUserId.current = user.id
+    fetchAll()
+  }, [loading, user])
 
   const fetchAll = async () => {
     setLoadingData(true)
